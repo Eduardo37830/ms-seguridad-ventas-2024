@@ -10,7 +10,8 @@ const config = {
   user: '',
   password: '',
   database: 'seguridad_ventas',
-  useNewUrlParser: true
+  useNewUrlParser: true,
+  connectionTimeout: 100000, // 10 seconds, now it have 100 seconds
 };
 
 // Observe application's life cycle to disconnect the datasource when
