@@ -18,7 +18,12 @@ import {
   response,
   HttpErrors,
 } from '@loopback/rest';
-import {Credenciales, Login, Usuario} from '../models';
+import {
+  Credenciales,
+  FactorDeAutenticacionPorCodigo,
+  Login,
+  Usuario,
+} from '../models';
 import {LoginRepository, UsuarioRepository} from '../repositories';
 import {service} from '@loopback/core';
 import {SeguridadUsuarioService} from '../services/seguridad-usuario.service';
@@ -188,8 +193,38 @@ export class UsuarioController {
       login.estadoToken = false;
       this.repositorioLogin.create(login);
       //Notificar al usuario via correo o sms
-      return usuario
+      return usuario;
     }
     return new HttpErrors[401]('Las credenciales no son correctas');
+  }
+
+  @post('verificar-2fa')
+  @response(200, {
+    description: 'Validar un codigo de 2fa',
+  })
+  async VerificarCodigo2fa(
+    @requestBody({
+      content: {
+        'application/json': {
+          schema: getModelSchemaRef(FactorDeAutenticacionPorCodigo),
+        },
+      },
+    })
+    credenciales: FactorDeAutenticacionPorCodigo,
+  ): Promise<object> {
+    let usuario = await this.servicioSeguridad.validarCodigo2fa(credenciales);
+    if (usuario) {
+      let token = this.servicioSeguridad.crearToken(usuario);
+      if (usuario) {
+        usuario.clave = '';
+        return {
+          user: usuario,
+          token: token,
+        };
+      }
+    }
+    return new HttpErrors[401](
+      'El codigo 2fa no es valido para el usuario definido',
+    );
   }
 }

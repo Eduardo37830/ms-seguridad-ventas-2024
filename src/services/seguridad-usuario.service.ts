@@ -1,15 +1,24 @@
 import {injectable, /* inject, */ BindingScope} from '@loopback/core';
-import {Credenciales, Usuario} from '../models';
+import {
+  Credenciales,
+  FactorDeAutenticacionPorCodigo,
+  Login,
+  Usuario,
+} from '../models';
 import {repository} from '@loopback/repository';
-import {UsuarioRepository} from '../repositories';
+import {LoginRepository, UsuarioRepository} from '../repositories';
+import {ConfiguracionSeguridad} from '../config/seguridad.config';
 const generator = require('generate-password');
 const MD5 = require('crypto-js/md5');
+const jwt = require('jsonwebtoken');
 
 @injectable({scope: BindingScope.TRANSIENT})
 export class SeguridadUsuarioService {
   constructor(
     @repository(UsuarioRepository)
     public repositorioUsuario: UsuarioRepository,
+    @repository(LoginRepository)
+    public repositorioLogin: LoginRepository,
   ) {}
 
   /*
@@ -21,7 +30,7 @@ export class SeguridadUsuarioService {
    * @returns cadena aleatoria de n caracteres
    */
 
-  crearTextoAleatorio(n:number): string {
+  crearTextoAleatorio(n: number): string {
     let clave = generator.generate({
       length: n,
       numbers: true,
@@ -57,5 +66,46 @@ export class SeguridadUsuarioService {
       },
     });
     return usuario as Usuario;
+  }
+
+  /**
+   * Validar un codigo 2fa para un usuario
+   * @param credenciales2fa credenciales del usuario con el codigo 2fa
+   * @returns el registro de login o null
+   */
+
+  async validarCodigo2fa(
+    credenciales2fa: FactorDeAutenticacionPorCodigo,
+  ): Promise<Usuario | null> {
+    let login = await this.repositorioLogin.findOne({
+      where: {
+        usuarioId: credenciales2fa.usuarioId,
+        codigo2fa: credenciales2fa.codigo2fa,
+        estadoCodigo2fa: false,
+      },
+    });
+    if (login) {
+      let usuario = await this.repositorioUsuario.findById(
+        credenciales2fa.usuarioId,
+      );
+      return usuario;
+    }
+    return null;
+  }
+
+  /**
+   * Generacion de jwt
+   * @param usuario informacion del usuario
+   * @returns token
+   */
+
+  crearToken(usuario: Usuario): string {
+    let datos = {
+      nombre: `$(usuario.primerNombre) $(usuario.segundoNombre) $(usuario.primerApellido) $(usuario.segundoApellido`,
+      role: usuario.rolId,
+      email: usuario.correo,
+    };
+    let token = jwt.sign(datos, ConfiguracionSeguridad.claveJWT);
+    return token;
   }
 }
