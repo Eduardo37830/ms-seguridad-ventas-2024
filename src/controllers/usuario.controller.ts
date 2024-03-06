@@ -28,6 +28,7 @@ import {LoginRepository, UsuarioRepository} from '../repositories';
 import {service} from '@loopback/core';
 import {SeguridadUsuarioService} from '../services/seguridad-usuario.service';
 import {userInfo} from 'os';
+import {authenticate} from '@loopback/authentication';
 
 export class UsuarioController {
   constructor(
@@ -76,6 +77,7 @@ export class UsuarioController {
     return this.usuarioRepository.count(where);
   }
 
+  @authenticate("auth")
   @get('/usuario')
   @response(200, {
     description: 'Array of Usuario model instances',
@@ -239,4 +241,6 @@ export class UsuarioController {
       'El codigo 2fa no es valido para el usuario definido',
     );
   }
+
+
 }
