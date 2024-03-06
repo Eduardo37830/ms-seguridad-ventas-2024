@@ -101,7 +101,7 @@ export class SeguridadUsuarioService {
 
   crearToken(usuario: Usuario): string {
     let datos = {
-      nombre: `$(usuario.primerNombre) $(usuario.segundoNombre) $(usuario.primerApellido) $(usuario.segundoApellido`,
+      nombre: `${usuario.primerNombre} ${usuario.segundoNombre} ${usuario.primerApellido} ${usuario.segundoApellido}`,
       role: usuario.rolId,
       email: usuario.correo,
     };

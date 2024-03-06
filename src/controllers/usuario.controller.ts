@@ -27,6 +27,7 @@ import {
 import {LoginRepository, UsuarioRepository} from '../repositories';
 import {service} from '@loopback/core';
 import {SeguridadUsuarioService} from '../services/seguridad-usuario.service';
+import {userInfo} from 'os';
 
 export class UsuarioController {
   constructor(
@@ -192,6 +193,7 @@ export class UsuarioController {
       login.token = '';
       login.estadoToken = false;
       this.repositorioLogin.create(login);
+      usuario.clave = '';
       //Notificar al usuario via correo o sms
       return usuario;
     }
@@ -217,6 +219,16 @@ export class UsuarioController {
       let token = this.servicioSeguridad.crearToken(usuario);
       if (usuario) {
         usuario.clave = '';
+        try {
+          this.usuarioRepository.logins(usuario._id).patch(
+            {estadoCodigo2fa: true,
+            token: token},
+            {estadoCodigo2fa: false});
+          }
+        catch (error) {
+          console.log("No se ha almacenado el cambio del estado del token en la base de datos");
+
+        }
         return {
           user: usuario,
           token: token,
